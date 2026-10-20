@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+    <meta name="referrer" content="no-referrer">
+    <title>MACRO ENGINE - キーボード マクロデータ自動生成ツール</title>
+    <style>
+        :root {
+            --bg-color: #0b0e14;
+            --text-color: #e0e6ed;
+            --card-bg: rgba(22, 27, 34, 0.8);
+            --card-border: #30363d;
+            --header-bg: #161b22;
+            --header-text: #58a6ff;
+            --row-even-bg: rgba(255, 255, 255, 0.02);
+            --input-bg: #0d1117;
+            --input-text: #c9d1d9;
+            --input-border: #30363d;
+            --hex-bg: #1f242d;
+            --hex-text: #79c0ff;
+            --preview-text: #7ee787;
+            --action-bar-bg: rgba(13, 17, 23, 0.85);
+            --accent-cyan: #00f0ff;
+            --accent-green: #2ea043;
+            --accent-red: #da3633;
+            --accent-orange: #d97706;
+            --ctx-bg: #161b22;
+            --ctx-border: #30363d;
+            --ctx-hover-bg: #1f242d;
+            --ctx-hover-text: #58a6ff;
+            --ctx-sub-hover-bg: #1f6feb;
+            --ctx-sub-hover-text: #ffffff;
+            --sb-track: #1c2330;
+            --sb-track-border: #3d4756;
+            --sb-thumb: linear-gradient(180deg, #4cc9f0 0%, #1f6feb 100%);
+            --sb-thumb-hover: linear-gradient(180deg, #7ee8ff 0%, #3b8bff 100%);
+            --sb-thumb-border: #0b0e14;
+            --sb-glow: rgba(0, 240, 255, 0.35);
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f0f4f8;
+            --text-color: #1b2430;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --card-border: #cbd5e1;
+            --header-bg: #1e293b;
+            --header-text: #38bdf8;
+            --row-even-bg: #f8fafc;
+            --input-bg: #ffffff;
+            --input-text: #0f172a;
+            --input-border: #94a3b8;
+            --hex-bg: #f1f5f9;
+            --hex-text: #0284c7;
+            --preview-text: #16a34a;
+            --action-bar-bg: rgba(255, 255, 255, 0.85);
+            --ctx-bg: #ffffff;
+            --ctx-border: #cbd5e1;
+            --ctx-hover-bg: #e2e8f0;
+            --ctx-hover-text: #0284c7;
+            --ctx-sub-hover-bg: #0284c7;
+            --ctx-sub-hover-text: #ffffff;
+            --sb-track: #dbe3ec;
+            --sb-track-border: #94a3b8;
+            --sb-thumb: linear-gradient(180deg, #38bdf8 0%, #0369a1 100%);
+            --sb-thumb-hover: linear-gradient(180deg, #7dd3fc 0%, #0284c7 100%);
+            --sb-thumb-border: #f0f4f8;
+            --sb-glow: rgba(2, 132, 199, 0.3);
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 12px; }
+        
+        body {
+            position: relative;
+            padding: 20px;
+            background: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.05), transparent 70%);
+            color: var(--text-color);
+            margin: 0;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0 0 15px 0;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-color);
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        h1::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            background: var(--accent-cyan);
+            box-shadow: 0 0 8px var(--accent-cyan);
+            border-radius: 2px;
+        }
+
+        .action-bar {
+            position: relative;
+            z-index: 10;
+            background: var(--action-bar-bg);
+            padding: 12px 18px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(12px);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        button, .file-label {
+            padding: 8px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            background: #238636;
+            color: #ffffff;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover, .file-label:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            filter: brightness(1.1);
+        }
+
+        button:active, .file-label:active {
+            transform: translateY(0);
+        }
+
+        button.btn-connect { background: #1f6feb; border-color: rgba(56, 139, 253, 0.4); }
+        button.btn-save { background: var(--accent-orange); }
+        button.btn-default { background: #9e6a03; }
+
+        button.sec {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+            border-color: var(--card-border);
+        }
+
+        button.sec:hover { background: rgba(255, 255, 255, 0.1); }
+        .file-label { background: #2ea043; }
+
+        .timestamp-display {
+            font-size: 11px;
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--text-color);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            padding: 7px 14px;
+            border-radius: 6px;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .theme-toggle-btn { background: #8957e5; }
+
+        .github-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 7px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .github-link:hover { filter: brightness(1.2); }
+
+        .console-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .console-header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .console-body {
+            height: 120px;
+            overflow-y: auto;
+            padding: 10px 16px;
+            font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+            font-size: 11px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #05070a;
+            color: #8b949e;
+        }
+
+        .console-log-tx { color: var(--accent-cyan); }
+        .console-log-rx { color: #56d364; }
+        .console-log-sys { color: #e3b341; }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: #ffffff !important;
+        }
+
+        .status-badge.connected {
+            background: rgba(46, 160, 67, 0.8);
+            border: 1px solid rgba(46, 160, 67, 1);
+            box-shadow: 0 0 8px rgba(46, 160, 67, 0.4);
+        }
+
+        .status-badge.disconnected {
+            background: rgba(218, 54, 51, 0.8);
+            border: 1px solid rgba(218, 54, 51, 1);
+        }
+
+        .mini-btn {
+            padding: 4px 10px;
+            font-size: 11px;
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .mini-btn:hover { background: rgba(255, 255, 255, 0.2); border-color: #ffffff; }
+
+        .matrix-container {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+
+        .matrix-container { scrollbar-width: none; }
+        .matrix-container::-webkit-scrollbar { display: none; }
+
+        /* 横スクロールバー: 表示範囲(ビューポート)の最下部に固定 */
+        .matrix-hscroll {
+            position: sticky;
+            bottom: 0;
+            z-index: 2000;
+            overflow-x: auto;
+            overflow-y: hidden;
+            height: 22px;
+            display: none;
+            background: var(--sb-track);
+            border: 1px solid var(--sb-track-border);
+            border-radius: 11px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35), 0 -4px 12px rgba(0, 0, 0, 0.25);
+        }
+        .matrix-hscroll.active { display: block; }
+        .matrix-hscroll > div { height: 1px; }
+        .matrix-hscroll::-webkit-scrollbar { height: 20px; }
+        .matrix-hscroll::-webkit-scrollbar-track { background: transparent; border-radius: 10px; }
+        .matrix-hscroll::-webkit-scrollbar-thumb {
+            background: var(--sb-thumb);
+            border: 3px solid var(--sb-track);
+            border-radius: 10px;
+            box-shadow: 0 0 8px var(--sb-glow);
+        }
+        .matrix-hscroll::-webkit-scrollbar-thumb:hover { background: var(--sb-thumb-hover); }
+
+        .sw-column {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+            min-width: 250px;
+            max-width: 250px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            transition: border-color 0.2s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sw-column:hover { border-color: rgba(0, 240, 255, 0.3); }
+        .sw-column.has-open-ctx { z-index: 1000 !important; }
+
+        .sw-header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            text-align: center;
+            font-weight: 700;
+            padding: 10px;
+            border-top-left-radius: 7px;
+            border-top-right-radius: 7px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--card-border);
+            letter-spacing: 0.5px;
+        }
+
+        .step-row {
+            padding: 10px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+
+        .step-row:last-child { border-bottom: none; }
+        .step-row:nth-child(even) { background: var(--row-even-bg); }
+
+        .step-num {
+            font-size: 11px;
+            font-weight: 700;
+            color: #58a6ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        select, input, .ctx-btn {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            background: var(--input-bg);
+            color: var(--input-text);
+            text-align: left;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        select:focus, input:focus, .ctx-btn:focus {
+            border-color: #58a6ff;
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+        }
+
+        .hex-input {
+            font-family: 'Cascadia Code', Consolas, monospace;
+            font-weight: bold;
+            background: var(--hex-bg);
+            color: var(--hex-text);
+        }
+
+        .key-preview {
+            font-size: 11px;
+            color: var(--preview-text);
+            font-weight: 600;
+            min-height: 15px;
+        }
+
+        .delay-input-container {
+            display: none;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .delay-input-container.active { display: flex; }
+
+        .ctx-container { position: relative; width: 100%; }
+        
+        .ctx-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 220px;
+            background: var(--ctx-bg);
+            border: 1px solid var(--ctx-border);
+            border-radius: 6px;
+            z-index: 9999;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+            padding: 4px 0;
+        }
+
+        .ctx-menu.open-up { top: auto; bottom: 100%; }
+        .ctx-menu.open-left { left: auto; right: 0; }
+        .ctx-container.open .ctx-menu { display: block; }
+
+        .ctx-parent-item {
+            position: relative;
+            padding: 7px 12px;
+            font-size: 12px;
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ctx-parent-item:hover {
+            background: var(--ctx-hover-bg);
+            color: var(--ctx-hover-text);
+        }
+
+        .ctx-parent-item:hover > .ctx-sub-menu { display: block; }
+
+        /* デフォルトのサブメニュー（右下展開） */
+        .ctx-sub-menu {
+            display: none;
+            position: absolute;
+            top: -5px;
+            bottom: auto;
+            left: 100%;
+            right: auto;
+            width: 200px;
+            max-height: 280px;
+            overflow-y: auto;
+            background: var(--ctx-bg);
+            border: 1px solid var(--ctx-border);
+            border-radius: 6px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+            padding: 4px 0;
+            z-index: 10000;
+        }
+
+        /* 親が左向きの場合 */
+        .ctx-menu.open-left .ctx-sub-menu { left: auto; right: 100%; }
+
+        /* サブメニュー単独で上向き展開する場合 */
+        .ctx-sub-menu.sub-open-up {
+            top: auto !important;
+            bottom: -5px !important;
+        }
+
+        .ctx-sub-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            color: var(--text-color);
+            font-size: 12px;
+        }
+
+        .ctx-sub-item:hover {
+            background: var(--ctx-sub-hover-bg);
+            color: var(--ctx-sub-hover-text) !important;
+        }
+
+        .ctx-arrow { font-size: 9px; color: #8b949e; }
+        .sw-count { display: block; margin-top: 2px; font-size: 10px; font-weight: 600; color: #8b949e; }
+        .drag-handle { cursor: grab; user-select: none; margin-right: 6px; color: #8b949e; font-size: 14px; }
+        .step-head { display: flex; align-items: center; }
+        .step-tools { display: flex; gap: 4px; }
+        .tool-btn { padding: 2px 7px; font-size: 11px; background: transparent; color: var(--text-color); border: 1px solid var(--card-border); border-radius: 4px; box-shadow: none; }
+        .tool-btn.del:hover { border-color: var(--accent-red); color: #f85149; }
+        .step-row.dragging { opacity: 0.4; }
+        .step-row.drop-target { outline: 2px dashed var(--accent-cyan); outline-offset: -2px; }
+        .step-row.step-hidden { visibility: hidden; pointer-events: none; }
+        .step-row.step-unset .drag-handle, .step-row.step-unset .tool-btn { opacity: 0.3; }
+        .limit-note { margin: -5px 0 15px 0; color: #8b949e; }
+    </style>
+</head>
+
+<body>
+
+    <!-- ============================================================
+         設定: GitHub リポジトリの URL (確定したらここだけ書き換える)
+         ============================================================ -->
+    <script>
+        const GITHUB_URL = "https://github.com/";
+    </script>
+    <a id="github_link" class="github-link" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+
+    <h1>MACRO ENGINE <span>(364B)</span></h1>
+    <div class="limit-note">各スイッチ最大 16 ステップまで設定できます。未設定行は末尾に 1 つだけ表示され、設定すると次の行が追加されます。☰ をドラッグで並べ替え・他スイッチへ移動できます (Ctrl を押しながらドロップでコピー)。送信・保存時は未設定の隙間を詰めます。</div>
+
+    <!-- アクションバー -->
+    <div class="action-bar">
+        <button id="btn_connect" class="btn-connect" onclick="toggleConnectSerial()">COMポート選択</button>
+        <button onclick="sendSaveCommand()" class="btn-save">本体へ保存 (save)</button>
+        <button onclick="sendEraseDefaultCommand()" class="btn-default">デフォルト設定に戻す</button>
+        <button onclick="exportBinary()" class="sec">364B バイナリ (.bin) 保存</button>
+        <label class="file-label">
+            .bin を読み込む
+            <input type="file" id="bin_file_input" accept=".bin" style="display:none;" onchange="importBinary(event)">
+        </label>
+        <button onclick="clearAll()" class="sec" style="border-color: var(--accent-red); color: #f85149;">全クリア</button>
+
+        <div id="timestamp_display" class="timestamp-display">更新日時: ----</div>
+        <button id="theme_toggle_btn" class="theme-toggle-btn" onclick="toggleTheme()">☀️ ライトモード</button>
+    </div>
+
+    <!-- 通信コンソール -->
+    <div class="console-card">
+        <div class="console-header">
+            <span>CONSOLE MONITOR (SERIAL Tx / Rx)</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span id="conn_status" class="status-badge disconnected">未接続</span>
+                <button type="button" onclick="clearConsole()" class="mini-btn">ログ消去</button>
+            </div>
+        </div>
+        <div class="console-body" id="console_body"></div>
+    </div>
+
+    <div class="matrix-container" id="matrix"></div>
+    <div class="matrix-hscroll" id="matrix_hscroll"><div id="matrix_hscroll_inner"></div></div>
+
+    <script>
+        // 横スクロールバーをビューポート最下部に固定 (matrix と同期)
+        (function () {
+            const m = document.getElementById('matrix');
+            const bar = document.getElementById('matrix_hscroll');
+            const inner = document.getElementById('matrix_hscroll_inner');
+            let lock = false;
+            function update() {
+                inner.style.width = m.scrollWidth + 'px';
+                bar.classList.toggle('active', m.scrollWidth > m.clientWidth + 1);
+                bar.scrollLeft = m.scrollLeft;
+            }
+            bar.addEventListener('scroll', () => { if (lock) { lock = false; return; } if (m.scrollLeft !== bar.scrollLeft) { lock = true; m.scrollLeft = bar.scrollLeft; } });
+            m.addEventListener('scroll', () => { if (lock) { lock = false; return; } if (bar.scrollLeft !== m.scrollLeft) { lock = true; bar.scrollLeft = m.scrollLeft; } });
+            new ResizeObserver(update).observe(m);
+            new MutationObserver(update).observe(m, { childList: true, subtree: true });
+            window.addEventListener('resize', update);
+            update();
+        })();
+    </script>
+    <script>
+        const BASE_TIMESTAMP_2026 = 1767225600;
+
+        const SW_NAMES = [
+            "右上sw",
+            "右下sw",
+            "左上sw",
+            "左下sw",
+            "上ダイヤル押し込みsw",
+            "下ダイヤル押し込みsw",
+            "上ダイヤル回転(時計回り)",
+            "上ダイヤル回転(反時計回り)",
+            "下ダイヤル回転(時計回り)",
+            "下ダイヤル回転(反時計回り)"
+        ];
+
+        const KEY_DATABASE = [
+            { group: "ファンクションキー (F1〜F24)", items: [
+                { name: "F1", code: 0x3A }, { name: "F2", code: 0x3B }, { name: "F3", code: 0x3C },
+                { name: "F4", code: 0x3D }, { name: "F5", code: 0x3E }, { name: "F6", code: 0x3F },
+                { name: "F7", code: 0x40 }, { name: "F8", code: 0x41 }, { name: "F9", code: 0x42 },
+                { name: "F10", code: 0x43 }, { name: "F11", code: 0x44 }, { name: "F12", code: 0x45 },
+                { name: "F13", code: 0x68 }, { name: "F14", code: 0x69 }, { name: "F15", code: 0x6A },
+                { name: "F16", code: 0x6B }, { name: "F17", code: 0x6C }, { name: "F18", code: 0x6D },
+                { name: "F19", code: 0x6E }, { name: "F20", code: 0x6F }, { name: "F21", code: 0x70 },
+                { name: "F22", code: 0x71 }, { name: "F23", code: 0x72 }, { name: "F24", code: 0x73 }
+            ]},
+            { group: "アルファベット (A〜Z)", items: [
+                { name: "A", code: 0x04 }, { name: "B", code: 0x05 }, { name: "C", code: 0x06 },
+                { name: "D", code: 0x07 }, { name: "E", code: 0x08 }, { name: "F", code: 0x09 },
+                { name: "G", code: 0x0A }, { name: "H", code: 0x0B }, { name: "I", code: 0x0C },
+                { name: "J", code: 0x0D }, { name: "K", code: 0x0E }, { name: "L", code: 0x0F },
+                { name: "M", code: 0x10 }, { name: "N", code: 0x11 }, { name: "O", code: 0x12 },
+                { name: "P", code: 0x13 }, { name: "Q", code: 0x14 }, { name: "R", code: 0x15 },
+                { name: "S", code: 0x16 }, { name: "T", code: 0x17 }, { name: "U", code: 0x18 },
+                { name: "V", code: 0x19 }, { name: "W", code: 0x1A }, { name: "X", code: 0x1B },
+                { name: "Y", code: 0x1C }, { name: "Z", code: 0x1D }
+            ]},
+            { group: "数字 (メインキー)", items: [
+                { name: "1 (!)", code: 0x1E }, { name: "2 (\")", code: 0x1F }, { name: "3 (#)", code: 0x20 },
+                { name: "4 ($)", code: 0x21 }, { name: "5 (%)", code: 0x22 }, { name: "6 (&)", code: 0x23 },
+                { name: "7 (')", code: 0x24 }, { name: "8 (()", code: 0x25 }, { name: "9 ())", code: 0x26 },
+                { name: "0", code: 0x27 }
+            ]},
+            { group: "修飾キー (Modifiers)", items: [
+                { name: "左 Ctrl", code: 0xE0 }, { name: "左 Shift", code: 0xE1 },
+                { name: "左 Alt", code: 0xE2 }, { name: "左 Win/GUI", code: 0xE3 },
+                { name: "右 Ctrl", code: 0xE4 }, { name: "右 Shift", code: 0xE5 },
+                { name: "右 Alt", code: 0xE6 }, { name: "右 Win/GUI", code: 0xE7 }
+            ]},
+            { group: "制御・編集・矢印キー", items: [
+                { name: "Enter", code: 0x28 }, { name: "Esc", code: 0x29 }, { name: "Backspace", code: 0x2A },
+                { name: "Tab", code: 0x2B }, { name: "Space", code: 0x2C }, { name: "Caps Lock / 英数", code: 0x39 },
+                { name: "Print Screen", code: 0x46 }, { name: "Scroll Lock", code: 0x47 }, { name: "Pause / Break", code: 0x48 },
+                { name: "Insert", code: 0x49 }, { name: "Home", code: 0x4A }, { name: "Page Up", code: 0x4B },
+                { name: "Delete", code: 0x4C }, { name: "End", code: 0x4D }, { name: "Page Down", code: 0x4E },
+                { name: "右矢印 (→)", code: 0x4F }, { name: "左矢印 (←)", code: 0x50 },
+                { name: "下矢印 (↓)", code: 0x51 }, { name: "上矢印 (↑)", code: 0x52 }, { name: "Application (メニュー)", code: 0x65 }
+            ]},
+            { group: "メディア再生・音量 (Consumer)", items: [
+                { name: "音量アップ (Vol Up)", code: 0x80E9 }, { name: "音量ダウン (Vol Down)", code: 0x80EA },
+                { name: "消音 (Mute)", code: 0x80E2 }, { name: "再生 / 一時停止", code: 0x80CD },
+                { name: "停止 (Stop)", code: 0x80B7 }, { name: "次の曲 (Next)", code: 0x80B5 },
+                { name: "前の曲 (Prev)", code: 0x80B6 }, { name: "早送り (Fast Forward)", code: 0x80B3 },
+                { name: "巻戻し (Rewind)", code: 0x80B4 }
+            ]},
+            { group: "Web・ブラウザ操作 (Consumer)", items: [
+                { name: "ブラウザ ホーム", code: 0x8223 }, { name: "ブラウザ 戻る", code: 0x8224 },
+                { name: "ブラウザ 進む", code: 0x8225 }, { name: "ブラウザ 更新 (Refresh)", code: 0x8227 },
+                { name: "ブラウザ 停止 (Stop)", code: 0x8226 }, { name: "ブラウザ 検索", code: 0x8221 },
+                { name: "ブックマーク", code: 0x822A }
+            ]},
+            { group: "アプリ起動・システム (Consumer/System)", items: [
+                { name: "電卓 (Calculator)", code: 0x8192 }, { name: "マイコンピュータ", code: 0x8194 },
+                { name: "メールソフト起動", code: 0x818A }, { name: "画面明るさアップ", code: 0x806F },
+                { name: "画面明るさダウン", code: 0x8070 }, { name: "電源オフ (Power)", code: 0x8030 },
+                { name: "スリープ (Sleep)", code: 0x8032 }
+            ]},
+            { group: "記号キー (JIS)", items: [
+                { name: "- (=)", code: 0x2D }, { name: "^ (~)", code: 0x2E }, { name: "@ (`)", code: 0x2F },
+                { name: "[ ({)", code: 0x30 }, { name: "] (})", code: 0x31 }, { name: "ISO # (JIS配列には無し)", code: 0x32 },
+                { name: "; (+)", code: 0x33 }, { name: ": (*)", code: 0x34 }, { name: "半角/全角", code: 0x35 },
+                { name: ", (<)", code: 0x36 }, { name: ". (>)", code: 0x37 }, { name: "/ (?)", code: 0x38 },
+                { name: "ろ (\\ / _)", code: 0x87 }, { name: "カタカナ/ひらがな", code: 0x88 }, { name: "¥ (|)", code: 0x89 },
+                { name: "変換", code: 0x8A }, { name: "無変換", code: 0x8B }
+            ]},
+            { group: "テンキー (Keypad)", items: [
+                { name: "Num Lock", code: 0x53 }, { name: "テンキー /", code: 0x54 }, { name: "テンキー *", code: 0x55 },
+                { name: "テンキー -", code: 0x56 }, { name: "テンキー +", code: 0x57 }, { name: "テンキー Enter", code: 0x58 },
+                { name: "テンキー 1", code: 0x59 }, { name: "テンキー 2", code: 0x5A }, { name: "テンキー 3", code: 0x5B },
+                { name: "テンキー 4", code: 0x5C }, { name: "テンキー 5", code: 0x5D }, { name: "テンキー 6", code: 0x5E },
+                { name: "テンキー 7", code: 0x5F }, { name: "テンキー 8", code: 0x60 }, { name: "テンキー 9", code: 0x61 },
+                { name: "テンキー 0", code: 0x62 }, { name: "テンキー .", code: 0x63 }
+            ]}
+        ];
+
+        const CMD_DATABASE = [
+            { name: "全キー一括解除 (All Release)", code: 0x0000 },
+            { name: "指定時間待つ (Delay ms)", code: "DELAY" }
+        ];
+
+        const ACTION_TYPES = [
+            { label: "未設定 (Null)", val: 0 },
+            { label: "00: 押す (Down)", val: 0 },
+            { label: "01: 離す (Up)", val: 1 },
+            { label: "10: 打鍵 (Tap)", val: 2 },
+            { label: "11: 制御 (Cmd / Delay)", val: 3 }
+        ];
+
+        const CODE_TO_NAME_MAP = {};
+        KEY_DATABASE.forEach(grp => {
+            grp.items.forEach(item => {
+                if (typeof item.code === "number") CODE_TO_NAME_MAP[item.code] = item.name;
+            });
+        });
+
+        // ==========================================
+        // シリアル通信 (Web Serial API) 制御
+        // ==========================================
+        let serialPort = null;
+        let serialReader = null;
+        let readableStreamClosed = null;
+        let isConnected = false;
+        let readLoopActive = false;
+        let realtimeSyncTimer = null;
+        let isInitialLoading = false;
+        let eraseReloadTimer = null;
+
+        async function toggleConnectSerial() {
+            if (isConnected) {
+                await disconnectSerial();
+            } else {
+                await connectSerial();
+            }
+        }
+
+        async function connectSerial() {
+            if (!("serial" in navigator)) {
+                alert("お使いのブラウザは Web Serial API に対応していません。Chrome または Edge をご利用ください。");
+                return;
+            }
+            const hasEdits = Array.from({ length: 10 }, (_, sw) => readSteps(sw).some(isSet)).some(Boolean);
+            if (hasEdits && !confirm(
+                "現在画面に設定されているキーは、接続すると本体の設定で上書きされ、消えます。\n\n" +
+                "必要な場合は、[キャンセル] を押して先に『364B バイナリ (.bin) 保存』でバックアップすることをお勧めします。\n\n" +
+                "このまま接続しますか?")) {
+                return;
+            }
+            try {
+                if (serialPort) {
+                    await disconnectSerial();
+                }
+
+                serialPort = await navigator.serial.requestPort();
+                await serialPort.open({ baudRate: 115200 });
+                
+                isConnected = true;
+                updateConnStatus(true);
+                logConsole("シリアルポートに接続しました (115200 bps)", "sys");
+
+                readLoopActive = true;
+                readSerialLoop();
+
+                logConsole("本体から現在の設定を取得中...", "sys");
+                await requestDump();
+            } catch (err) {
+                logConsole("接続失敗: " + err.message, "sys");
+                await disconnectSerial();
+            }
+        }
+
+        async function disconnectSerial() {
+            readLoopActive = false;
+
+            if (serialReader) {
+                try { await serialReader.cancel(); } catch (e) {}
+                serialReader = null;
+            }
+
+            if (readableStreamClosed) {
+                try { await readableStreamClosed; } catch (e) {}
+                readableStreamClosed = null;
+            }
+
+            if (serialPort) {
+                try { await serialPort.close(); } catch (e) {}
+                serialPort = null;
+            }
+
+            isConnected = false;
+            isInitialLoading = false;
+            updateConnStatus(false);
+            logConsole("シリアルポートを切断しました", "sys");
+        }
+
+        async function readSerialLoop() {
+            const textDecoder = new TextDecoderStream();
+            readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
+            serialReader = textDecoder.readable.getReader();
+
+            let buffer = "";
+            try {
+                while (readLoopActive) {
+                    const { value, done } = await serialReader.read();
+                    if (done) break;
+                    if (value) {
+                        buffer += value;
+                        const lines = buffer.split(/\r?\n/);
+                        buffer = lines.pop();
+                        if (buffer.length > 4096) buffer = "";
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+                            if (trimmed.length > 0) {
+                                logConsole(trimmed, "rx");
+                                parseRxLine(trimmed);
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                if (readLoopActive) {
+                    logConsole("受信ループ終了: " + err.message, "sys");
+                }
+            } finally {
+                try { serialReader.releaseLock(); } catch(e) {}
+            }
+            if (readLoopActive) await disconnectSerial();
+        }
+
+        function parseRxLine(line) {
+            const cleanLine = line.trim();
+            if (/^[0-9a-fA-F]{728}$/.test(cleanLine)) {
+                logConsole("本体の読み込みデータを画面に反映します", "sys");
+                const byteArray = new Uint8Array(364);
+                for (let i = 0; i < 364; i++) {
+                    byteArray[i] = parseInt(cleanLine.substr(i * 2, 2), 16);
+                }
+                parseAndApplyPayload(byteArray);
+                isInitialLoading = false;
+            } else if (cleanLine.includes("EEPROM erased")) {
+                logConsole("デフォルト設定に初期化されました。最新データを再読み込みします。", "sys");
+                scheduleReloadAfterErase();
+            } else if (eraseReloadTimer && cleanLine.startsWith("ERR")) {
+                clearTimeout(eraseReloadTimer);
+                eraseReloadTimer = null;
+            }
+        }
+
+        async function sendCommand(cmdStr) {
+            if (!serialPort || !serialPort.writable || !isConnected) return;
+            let writer = null;
+            try {
+                const encoder = new TextEncoder();
+                writer = serialPort.writable.getWriter();
+                logConsole(cmdStr, "tx");
+                await writer.write(encoder.encode(cmdStr + "\r\n"));
+            } catch (err) {
+                logConsole("送信エラー: " + err.message, "sys");
+            } finally {
+                if (writer) writer.releaseLock();
+            }
+        }
+
+        async function requestDump() {
+            isInitialLoading = true;
+            await sendCommand("dump");
+            setTimeout(() => {
+                if (isInitialLoading && isConnected) {
+                    isInitialLoading = false;
+                    logConsole("本体から応答がありません。以降の編集は本体へ送信されます。", "sys");
+                }
+            }, 3000);
+        }
+
+        async function sendSaveCommand() {
+            if (!isConnected) {
+                alert("COMポートが接続されていません。「COMポート選択」から接続してください。");
+                return;
+            }
+            if (isInitialLoading) {
+                alert("本体の設定を読み込み中です。少し待ってから保存してください。");
+                return;
+            }
+            compactAllSteps();
+            clearTimeout(realtimeSyncTimer);
+            await sendLoad();
+            await sendCommand("save");
+        }
+
+        function sendEraseDefaultCommand() {
+            if (!isConnected) {
+                alert("COMポートが接続されていません。「COMポート選択」から接続してください。");
+                return;
+            }
+            if (confirm("本体のEEPROMを消去し、デフォルト（初期設定）に戻しますか？")) {
+                clearTimeout(realtimeSyncTimer);
+                sendCommand("erase yes");
+                scheduleReloadAfterErase();
+            }
+        }
+
+        // erase 後に dump を再取得してUIへ反映 (応答文言に依存しないよう、送信側でも予約する)
+        function scheduleReloadAfterErase() {
+            clearTimeout(eraseReloadTimer);
+            eraseReloadTimer = setTimeout(() => { eraseReloadTimer = null; requestDump(); }, 400);
+        }
+
+        async function sendLoad() {
+            const data = build364BytePayload();
+            let hex = "";
+            for (let i = 0; i < data.length; i++) {
+                hex += data[i].toString(16).padStart(2, '0').toUpperCase();
+            }
+            await sendCommand("load " + hex);
+        }
+
+        function triggerRealtimeSync() {
+            updateTimestampUI(Math.floor(Date.now() / 1000));
+            if (!isConnected || isInitialLoading) return;
+            clearTimeout(realtimeSyncTimer);
+            realtimeSyncTimer = setTimeout(sendLoad, 200);
+        }
+
+        function logConsole(text, type) {
+            const consoleBody = document.getElementById("console_body");
+            if (!consoleBody) return;
+            
+            const div = document.createElement("div");
+            const timestamp = new Date().toLocaleTimeString();
+
+            if (type === "tx") {
+                div.className = "console-log-tx";
+                div.textContent = `[${timestamp}] Tx > ${text}`;
+            } else if (type === "rx") {
+                div.className = "console-log-rx";
+                div.textContent = `[${timestamp}] Rx < ${text}`;
+            } else {
+                div.className = "console-log-sys";
+                div.textContent = `[${timestamp}] SYS: ${text}`;
+            }
+            
+            consoleBody.appendChild(div);
+            consoleBody.scrollTop = consoleBody.scrollHeight;
+        }
+
+        function clearConsole() {
+            const consoleBody = document.getElementById("console_body");
+            if (consoleBody) consoleBody.innerHTML = "";
+        }
+
+        function updateConnStatus(connected) {
+            const badge = document.getElementById("conn_status");
+            const btn = document.getElementById("btn_connect");
+            if (connected) {
+                badge.textContent = "接続中";
+                badge.className = "status-badge connected";
+                btn.textContent = "COMポート切断";
+                btn.style.background = "#da3633";
+            } else {
+                badge.textContent = "未接続";
+                badge.className = "status-badge disconnected";
+                btn.textContent = "COMポート選択";
+                btn.style.background = "#1f6feb";
+            }
+        }
+
+        // ==========================================
+        // UI & 画面反映
+        // ==========================================
+        function updateTimestampUI(unixTimestamp) {
+            const display = document.getElementById("timestamp_display");
+            if (!display) return;
+            if (!unixTimestamp || unixTimestamp <= 0) {
+                display.textContent = "更新日時: ----";
+                return;
+            }
+            const date = new Date(unixTimestamp * 1000);
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const hh = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            const ss = String(date.getSeconds()).padStart(2, '0');
+            display.textContent = `更新日時: ${yyyy}/${mm}/${dd} ${hh}:${min}:${ss}`;
+        }
+
+        function parseAndApplyPayload(buffer) {
+            const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+            
+            const relTimestamp = view.getUint32(0, true);
+            const fullUnix = relTimestamp + BASE_TIMESTAMP_2026;
+            updateTimestampUI(fullUnix);
+
+            let offset = 4;
+
+            for (let sw = 0; sw < 10; sw++) {
+                for (let block = 0; block < 4; block++) {
+                    const typesByte = buffer[offset];
+
+                    for (let i = 0; i < 4; i++) {
+                        const step = block * 4 + i;
+                        const typeVal = (typesByte >> (i * 2)) & 0x03;
+                        const codeVal = view.getUint16(offset + 1 + i * 2, true);
+
+                        applyStepToUI(sw, step, typeVal, codeVal);
+                    }
+                    offset += 9;
+                }
+            }
+            for (let s = 0; s < 10; s++) refreshStepVisibility(s);
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem("theme");
+            if (savedTheme === "dark" || savedTheme === "light") {
+                applyTheme(savedTheme);
+            } else {
+                applyTheme("dark");
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+            const newTheme = currentTheme === "dark" ? "light" : "dark";
+            localStorage.setItem("theme", newTheme);
+            applyTheme(newTheme);
+        }
+
+        function applyTheme(theme) {
+            document.documentElement.setAttribute("data-theme", theme);
+            const btn = document.getElementById("theme_toggle_btn");
+            if (theme === "dark") {
+                btn.textContent = "☀️ ライトモード";
+            } else {
+                btn.textContent = "🌙 ダークモード";
+            }
+        }
+
+        function initUI() {
+            const container = document.getElementById("matrix");
+            container.innerHTML = "";
+
+            for (let sw = 0; sw < 10; sw++) {
+                const col = document.createElement("div");
+                col.className = "sw-column";
+                col.id = `sw_col_${sw}`;
+                col.addEventListener("dragover", e => onColDragOver(e, sw));
+                col.addEventListener("drop", e => onColDrop(e, sw));
+                const swLabelName = SW_NAMES[sw] || `SW ${sw}`;
+                col.innerHTML = `<div class="sw-header">${swLabelName}<span class="sw-count" id="sw_count_${sw}"></span></div>`;
+
+                for (let step = 0; step < 16; step++) {
+                    const row = document.createElement("div");
+                    row.className = "step-row";
+                    row.id = `step_row_${sw}_${step}`;
+                    row.addEventListener("dragover", e => onStepDragOver(e, sw, step));
+                    row.addEventListener("drop", e => onStepDrop(e, sw, step));
+
+                    let typeOptionsHtml = ACTION_TYPES.map(a => `<option value="${a.val}">${a.label}</option>`).join("");
+
+                    row.innerHTML = `
+                        <div class="step-num">
+                            <span class="step-head"><span class="drag-handle" draggable="true" title="ドラッグで移動 (Ctrl+ドロップでコピー)" ondragstart="onStepDragStart(event, ${sw}, ${step})" ondragend="onStepDragEnd()">☰</span>Step #${step + 1}</span>
+                            <span class="step-tools">
+                                <button type="button" class="tool-btn" title="コピー (すぐ下に複製)" onclick="copyStep(${sw}, ${step})">⧉</button>
+                                <button type="button" class="tool-btn del" title="削除 (後ろを詰める)" onclick="deleteStep(${sw}, ${step})">✕</button>
+                            </span>
+                        </div>
+                        <div id="preview_${sw}_${step}" class="key-preview">未設定</div>
+                        <input type="text" id="hex_${sw}_${step}" class="hex-input" value="0x0000" placeholder="16進数 (例: 0x0004)" oninput="onHexInput(${sw}, ${step})" onchange="normalizeHex(${sw}, ${step})">
+                        <select id="type_${sw}_${step}" onchange="onTypeSelectChange(${sw}, ${step})">
+                            ${typeOptionsHtml}
+                        </select>
+                        <div class="ctx-container" id="ctx_box_${sw}_${step}">
+                            <button type="button" class="ctx-btn" id="ctx_btn_${sw}_${step}" onclick="toggleCtxMenu(${sw}, ${step})">未設定 (Null / 0x0000) ▸</button>
+                            <div class="ctx-menu" id="ctx_menu_${sw}_${step}">
+                                ${buildCtxMenuHtml(sw, step, 0)}
+                            </div>
+                        </div>
+                        <input type="hidden" id="key_val_${sw}_${step}" value="0">
+                        <div id="delay_box_${sw}_${step}" class="delay-input-container">
+                            <input type="number" id="delay_${sw}_${step}" value="100" min="1" max="65535" placeholder="時間(ms)" oninput="onDelayInput(${sw}, ${step})"> ms
+                        </div>
+                    `;
+                    col.appendChild(row);
+                }
+                container.appendChild(col);
+                refreshStepVisibility(sw);
+            }
+            updateTimestampUI(Math.floor(Date.now() / 1000));
+        }
+
+        function initGlobalClickHandler() {
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.ctx-container')) {
+                    document.querySelectorAll('.ctx-container').forEach(el => el.classList.remove('open'));
+                    document.querySelectorAll('.ctx-menu').forEach(el => el.classList.remove('open-up', 'open-left'));
+                    document.querySelectorAll('.ctx-sub-menu').forEach(el => el.classList.remove('sub-open-up'));
+                    document.querySelectorAll('.sw-column').forEach(el => el.classList.remove('has-open-ctx'));
+                }
+            });
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                              .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+        }
+
+        function onTypeSelectChange(sw, step) {
+            const typeVal = parseInt(document.getElementById(`type_${sw}_${step}`).value);
+            const menuContainer = document.getElementById(`ctx_menu_${sw}_${step}`);
+            const delayBox = document.getElementById(`delay_box_${sw}_${step}`);
+            const btn = document.getElementById(`ctx_btn_${sw}_${step}`);
+            const hexInput = document.getElementById(`hex_${sw}_${step}`);
+            const hiddenVal = document.getElementById(`key_val_${sw}_${step}`);
+
+            menuContainer.innerHTML = buildCtxMenuHtml(sw, step, typeVal);
+
+            if (document.getElementById(`type_${sw}_${step}`).selectedIndex === 0) {
+                btn.textContent = "未設定 (Null / 0x0000) ▸";
+                hexInput.value = "0x0000";
+                hiddenVal.value = "0";
+                delayBox.classList.remove("active");
+                updatePreview(sw, step, 0);
+            } else if (typeVal === 3) {
+                btn.textContent = "全キー一括解除 (All Release) ▸";
+                hexInput.value = "0x0000";
+                hiddenVal.value = "0";
+                delayBox.classList.remove("active");
+                updatePreview(sw, step, 0);
+            } else {
+                delayBox.classList.remove("active");
+                if (hiddenVal.value === "DELAY" || btn.textContent.startsWith("全キー一括解除")) {
+                    hiddenVal.value = "0";
+                    hexInput.value = "0x0000";
+                    btn.textContent = "未設定 (Null / 0x0000) ▸";
+                    updatePreview(sw, step, 0);
+                }
+            }
+            refreshStepVisibility(sw);
+            triggerRealtimeSync();
+        }
+
+        function buildCtxMenuHtml(sw, step, typeVal) {
+            let html = "";
+            if (typeVal === 3) {
+                CMD_DATABASE.forEach(item => {
+                    const codeAttr = item.code === "DELAY" ? "'DELAY'" : item.code;
+                    html += `<div class="ctx-parent-item" onclick="selectCtxItem(${sw}, ${step}, ${codeAttr})">
+                                <span>${escapeHtml(item.name)}</span>
+                             </div>`;
+                });
+            } else {
+                KEY_DATABASE.forEach((grp) => {
+                    html += `
+                        <div class="ctx-parent-item" onmouseenter="onParentItemHover(this)">
+                            <span>${escapeHtml(grp.group)}</span>
+                            <span class="ctx-arrow">▸</span>
+                            <div class="ctx-sub-menu">
+                    `;
+                    grp.items.forEach(item => {
+                        html += `<div class="ctx-sub-item" onclick="selectCtxItem(${sw}, ${step}, ${item.code})">${escapeHtml(item.name)}</div>`;
+                    });
+                    html += `</div></div>`;
+                });
+            }
+            return html;
+        }
+
+        // 親要素にホバーしたタイミングでサブメニューの展開方向（上下）をリアルタイム計算
+        function onParentItemHover(parentElem) {
+            const subMenu = parentElem.querySelector('.ctx-sub-menu');
+            if (!subMenu) return;
+
+            // クラス初期化
+            subMenu.classList.remove('sub-open-up');
+
+            const itemRect = parentElem.getBoundingClientRect();
+            const subMenuHeight = 280; // max-height
+            const windowHeight = window.innerHeight;
+
+            // 下側に収まらない場合、上向き（bottom: -5px）へ切り替え
+            if (windowHeight - itemRect.top < subMenuHeight && itemRect.bottom > subMenuHeight) {
+                subMenu.classList.add('sub-open-up');
+            }
+        }
+
+        function toggleCtxMenu(sw, step) {
+            const container = document.getElementById(`ctx_box_${sw}_${step}`);
+            const menu = document.getElementById(`ctx_menu_${sw}_${step}`);
+            const btn = document.getElementById(`ctx_btn_${sw}_${step}`);
+            const col = document.getElementById(`sw_col_${sw}`);
+            const isOpen = container.classList.contains("open");
+            
+            document.querySelectorAll('.ctx-container').forEach(el => el.classList.remove('open'));
+            document.querySelectorAll('.ctx-menu').forEach(el => el.classList.remove('open-up', 'open-left'));
+            document.querySelectorAll('.ctx-sub-menu').forEach(el => el.classList.remove('sub-open-up'));
+            document.querySelectorAll('.sw-column').forEach(el => el.classList.remove('has-open-ctx'));
+
+            if (!isOpen) {
+                container.classList.add("open");
+                if (col) col.classList.add("has-open-ctx");
+
+                const rect = btn.getBoundingClientRect();
+                const windowHeight = window.innerHeight;
+                const windowWidth = window.innerWidth;
+
+                const menuHeight = 300;
+                const menuWidth = 420;
+
+                if (windowHeight - rect.bottom < menuHeight && rect.top > menuHeight) {
+                    menu.classList.add('open-up');
+                }
+
+                if (windowWidth - rect.left < menuWidth) {
+                    menu.classList.add('open-left');
+                }
+            }
+        }
+
+        function selectCtxItem(sw, step, code) {
+            const name = (code === "DELAY") ? CMD_DATABASE[1].name : keyName(code === 0 ? 3 : 0, code);
+            const hexInput = document.getElementById(`hex_${sw}_${step}`);
+            const btn = document.getElementById(`ctx_btn_${sw}_${step}`);
+            const hiddenVal = document.getElementById(`key_val_${sw}_${step}`);
+            const delayBox = document.getElementById(`delay_box_${sw}_${step}`);
+
+            if (code === "DELAY") {
+                delayBox.classList.add("active");
+                const delayMs = getDelayMs(sw, step);
+                hexInput.value = "0x" + delayMs.toString(16).padStart(4, '0').toUpperCase();
+                hiddenVal.value = "DELAY";
+                btn.textContent = `${name} ▸`;
+                updatePreview(sw, step, "DELAY");
+            } else {
+                delayBox.classList.remove("active");
+                const tSel = document.getElementById(`type_${sw}_${step}`);
+                if (tSel.selectedIndex === 0 && code !== 0) tSel.selectedIndex = 1;
+                hiddenVal.value = code;
+                btn.textContent = `${name} ▸`;
+                hexInput.value = "0x" + code.toString(16).padStart(4, '0').toUpperCase();
+                updatePreview(sw, step, code);
+            }
+            document.getElementById(`ctx_box_${sw}_${step}`).classList.remove("open");
+            const col = document.getElementById(`sw_col_${sw}`);
+            if (col) col.classList.remove("has-open-ctx");
+
+            refreshStepVisibility(sw);
+            triggerRealtimeSync();
+        }
+
+        function onDelayInput(sw, step) {
+            const delayInput = document.getElementById(`delay_${sw}_${step}`);
+            const hexInput = document.getElementById(`hex_${sw}_${step}`);
+            const val = getDelayMs(sw, step);
+            hexInput.value = "0x" + val.toString(16).padStart(4, '0').toUpperCase();
+            updatePreview(sw, step, "DELAY");
+            triggerRealtimeSync();
+        }
+
+        function onHexInput(sw, step) {
+            const hexInput = document.getElementById(`hex_${sw}_${step}`);
+            const btn = document.getElementById(`ctx_btn_${sw}_${step}`);
+            const hiddenVal = document.getElementById(`key_val_${sw}_${step}`);
+            const delayBox = document.getElementById(`delay_box_${sw}_${step}`);
+            const typeSelect = document.getElementById(`type_${sw}_${step}`);
+            const delayInput = document.getElementById(`delay_${sw}_${step}`);
+
+            let codeVal = parseInt(hexInput.value.trim(), 16);
+            if (isNaN(codeVal)) codeVal = 0;
+            codeVal = Math.min(0xFFFF, codeVal);
+            if (typeSelect.selectedIndex === 0 && codeVal > 0) typeSelect.selectedIndex = 1;
+
+            const typeVal = parseInt(typeSelect.value);
+
+            if (typeVal === 3 && codeVal > 0) {
+                delayBox.classList.add("active");
+                hiddenVal.value = "DELAY";
+                delayInput.value = codeVal;
+                btn.textContent = "指定時間待つ (Delay ms) ▸";
+                updatePreview(sw, step, "DELAY");
+            } else {
+                if (typeVal !== 3 || codeVal === 0) {
+                    delayBox.classList.remove("active");
+                }
+                hiddenVal.value = codeVal;
+                const name = keyName(typeVal, codeVal);
+                btn.textContent = `${name} ▸`;
+                updatePreview(sw, step, codeVal);
+            }
+            refreshStepVisibility(sw);
+            triggerRealtimeSync();
+        }
+
+        function updatePreview(sw, step, codeVal) {
+            const preview = document.getElementById(`preview_${sw}_${step}`);
+
+            if (codeVal === "DELAY") {
+                const ms = getDelayMs(sw, step);
+                preview.textContent = `判定: Wait (${ms}ms)`;
+            } else if (CODE_TO_NAME_MAP[codeVal] !== undefined) {
+                preview.textContent = `判定: ${CODE_TO_NAME_MAP[codeVal]}`;
+            } else if (codeVal === 0) {
+                const typeVal = parseInt(document.getElementById(`type_${sw}_${step}`).value);
+                preview.textContent = (typeVal === 3) ? "判定: 全キー一括解除" : "未設定";
+            } else {
+                preview.textContent = `判定: 0x${codeVal.toString(16).padStart(4, '0').toUpperCase()}`;
+            }
+        }
+
+        function hex4(v) {
+            return "0x" + v.toString(16).padStart(4, '0').toUpperCase();
+        }
+
+        // 0x0000 の表示名を一箇所に集約 (制御以外の0x0000は常に「未設定」)
+        function keyName(typeVal, codeVal) {
+            if (typeVal === 3 && codeVal === 0) return "全キー一括解除 (All Release)";
+            if (codeVal === 0) return "未設定 (Null / 0x0000)";
+            return CODE_TO_NAME_MAP[codeVal] || `カスタム (${hex4(codeVal)})`;
+        }
+
+        function getDelayMs(sw, step) {
+            const v = parseInt(document.getElementById(`delay_${sw}_${step}`).value);
+            return Math.min(65535, Math.max(1, isNaN(v) ? 1 : v));
+        }
+
+
+        // 設定済み最終ステップ + 未設定1行 だけ表示 (最大16)
+        function refreshStepVisibility(sw) {
+            let last = -1, count = 0;
+            for (let s = 0; s < 16; s++) {
+                if (isStepSet(sw, s)) { last = s; count++; }
+            }
+            const visible = Math.min(16, last + 2);
+            for (let s = 0; s < 16; s++) {
+                const row = document.getElementById(`step_row_${sw}_${s}`);
+                row.classList.toggle("step-hidden", s >= visible);
+                row.classList.toggle("step-unset", !isStepSet(sw, s));
+            }
+            document.getElementById(`sw_count_${sw}`).textContent = `設定 ${count} / 最大 16`;
+        }
+
+        function normalizeHex(sw, step) {
+            const hexInput = document.getElementById(`hex_${sw}_${step}`);
+            let v = parseInt(hexInput.value.trim(), 16);
+            if (isNaN(v)) v = 0;
+            hexInput.value = hex4(Math.min(0xFFFF, v));
+            onHexInput(sw, step);
+        }
+
+        const UNSET = { type: 0, code: 0 };
+
+        function isSet(d) { return d.type === 3 || d.code !== 0; }
+
+        // 画面上の1ステップを {type, code} で読む (未設定は type=0, code=0 に正規化)
+        function readStep(sw, step) {
+            const typeVal = parseInt(document.getElementById(`type_${sw}_${step}`).value);
+            const hiddenValStr = document.getElementById(`key_val_${sw}_${step}`).value;
+            const hexValStr = document.getElementById(`hex_${sw}_${step}`).value;
+            const code = (hiddenValStr === "DELAY")
+                ? getDelayMs(sw, step)
+                : Math.min(0xFFFF, parseInt(hexValStr, 16) || 0);
+            return { type: (typeVal !== 3 && code === 0) ? 0 : typeVal, code: code };
+        }
+
+        function isStepSet(sw, step) { return isSet(readStep(sw, step)); }
+
+        function readSteps(sw) {
+            return Array.from({ length: 16 }, (_, s) => readStep(sw, s));
+        }
+
+        function writeSteps(sw, arr) {
+            for (let s = 0; s < 16; s++) applyStepToUI(sw, s, arr[s].type, arr[s].code);
+            refreshStepVisibility(sw);
+        }
+
+        function applyStepToUI(sw, step, typeVal, codeVal) {
+        const typeSelect = document.getElementById(`type_${sw}_${step}`);
+        const hexInput = document.getElementById(`hex_${sw}_${step}`);
+        const btn = document.getElementById(`ctx_btn_${sw}_${step}`);
+        const hiddenVal = document.getElementById(`key_val_${sw}_${step}`);
+        const delayBox = document.getElementById(`delay_box_${sw}_${step}`);
+        const delayInput = document.getElementById(`delay_${sw}_${step}`);
+
+        typeSelect.selectedIndex = (typeVal === 3) ? 4 : (codeVal !== 0 ? typeVal + 1 : 0);
+        
+        const menuContainer = document.getElementById(`ctx_menu_${sw}_${step}`);
+        menuContainer.innerHTML = buildCtxMenuHtml(sw, step, typeVal);
+
+        if (typeVal === 3 && codeVal > 0) {
+            delayBox.classList.add("active");
+            delayInput.value = codeVal;
+            hiddenVal.value = "DELAY";
+            hexInput.value = "0x" + codeVal.toString(16).padStart(4, '0').toUpperCase();
+            btn.textContent = "指定時間待つ (Delay ms) ▸";
+            updatePreview(sw, step, "DELAY");
+        } else {
+            delayBox.classList.remove("active");
+            hiddenVal.value = codeVal;
+            hexInput.value = "0x" + codeVal.toString(16).padStart(4, '0').toUpperCase();
+            const name = keyName(typeVal, codeVal);
+            btn.textContent = `${name} ▸`;
+            updatePreview(sw, step, codeVal);
+        }
+        }
+
+        // arr(16件) に item を idx へ挿入。17件になったら未設定を1つ削除。空きが無ければ false
+        function insertAt(arr, idx, item) {
+            arr.splice(idx, 0, item);
+            if (arr.length <= 16) return true;
+            let k = -1;
+            for (let j = idx + 1; j < arr.length; j++) if (!isSet(arr[j])) { k = j; break; }
+            if (k < 0) for (let j = idx - 1; j >= 0; j--) if (!isSet(arr[j])) { k = j; break; }
+            if (k < 0) return false;
+            arr.splice(k, 1);
+            return true;
+        }
+
+        function moveStep(srcSw, srcStep, dstSw, dstIdx, copy) {
+            const same = srcSw === dstSw;
+            const srcArr = readSteps(srcSw);
+            const item = srcArr[srcStep];
+            if (!isSet(item)) return;
+            if (same && !copy && dstIdx === srcStep) return;
+            const dstArr = same ? srcArr : readSteps(dstSw);
+            if (!copy) {
+                srcArr.splice(srcStep, 1);
+                if (!same) srcArr.push({ ...UNSET });
+            }
+            if (!insertAt(dstArr, Math.min(dstIdx, dstArr.length), { ...item })) {
+                alert("移動先のスイッチは 16 ステップすべて使用済みです。");
+                return;
+            }
+            writeSteps(srcSw, srcArr);
+            if (!same) writeSteps(dstSw, dstArr);
+            triggerRealtimeSync();
+        }
+
+        function copyStep(sw, step) {
+            const arr = readSteps(sw);
+            if (!isSet(arr[step])) return;
+            if (!insertAt(arr, step + 1, { ...arr[step] })) {
+                alert("16 ステップすべて使用済みのためコピーできません。");
+                return;
+            }
+            writeSteps(sw, arr);
+            triggerRealtimeSync();
+        }
+
+        function deleteStep(sw, step) {
+            const arr = readSteps(sw);
+            arr.splice(step, 1);
+            arr.push({ ...UNSET });
+            writeSteps(sw, arr);
+            triggerRealtimeSync();
+        }
+
+        // 未設定の隙間を詰める (画面も更新)
+        function compactAllSteps() {
+            for (let sw = 0; sw < 10; sw++) {
+                const steps = readSteps(sw).filter(isSet);
+                writeSteps(sw, Array.from({ length: 16 }, (_, i) => steps[i] ? steps[i] : { ...UNSET }));
+            }
+        }
+
+        // ---- ドラッグ&ドロップ ----
+        let dragSrc = null;
+
+        function clearDropMarks() {
+            document.querySelectorAll(".dragging, .drop-target").forEach(el => el.classList.remove("dragging", "drop-target"));
+        }
+
+        function onStepDragStart(e, sw, step) {
+            if (!isStepSet(sw, step)) { e.preventDefault(); return; }
+            dragSrc = { sw, step };
+            e.dataTransfer.effectAllowed = "copyMove";
+            e.dataTransfer.setData("text/plain", `${sw},${step}`);
+            const row = document.getElementById(`step_row_${sw}_${step}`);
+            e.dataTransfer.setDragImage(row, 20, 10);
+            row.classList.add("dragging");
+        }
+
+        function onStepDragEnd() { dragSrc = null; clearDropMarks(); }
+
+        function onStepDragOver(e, sw, step) {
+            if (!dragSrc) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = e.ctrlKey ? "copy" : "move";
+            document.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
+            document.getElementById(`step_row_${sw}_${step}`).classList.add("drop-target");
+        }
+
+        function onStepDrop(e, sw, step) {
+            if (!dragSrc) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const src = dragSrc, copy = e.ctrlKey;
+            onStepDragEnd();
+            moveStep(src.sw, src.step, sw, step, copy);
+        }
+
+        function onColDragOver(e, sw) {
+            if (!dragSrc) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = e.ctrlKey ? "copy" : "move";
+        }
+
+        // 行以外(余白)へのドロップ = そのスイッチの末尾へ
+        function onColDrop(e, sw) {
+            if (!dragSrc) return;
+            e.preventDefault();
+            const src = dragSrc, copy = e.ctrlKey;
+            onStepDragEnd();
+            const steps = readSteps(sw);
+            let last = -1;
+            steps.forEach((d, i) => { if (isSet(d)) last = i; });
+            moveStep(src.sw, src.step, sw, Math.min(15, last + 1), copy);
+        }
+
+        // 送信用: 未設定を詰めて先頭から並べる (画面上の並びは変えない)
+        function build364BytePayload() {
+            const buffer = new Uint8Array(364);
+            const view = new DataView(buffer.buffer);
+
+            const nowUnix = Math.floor(Date.now() / 1000);
+            const relativeTimestamp = Math.max(0, nowUnix - BASE_TIMESTAMP_2026);
+
+            view.setUint32(0, relativeTimestamp, true);
+
+            let offset = 4;
+
+            for (let sw = 0; sw < 10; sw++) {
+                const steps = readSteps(sw).filter(isSet);
+                for (let block = 0; block < 4; block++) {
+                    let typesByte = 0;
+                    const codes = [0, 0, 0, 0];
+
+                    for (let i = 0; i < 4; i++) {
+                        const d = steps[block * 4 + i] || UNSET;
+                        typesByte |= (d.type & 0x03) << (i * 2);
+                        codes[i] = d.code;
+                    }
+
+                    buffer[offset] = typesByte;
+                    view.setUint16(offset + 1, codes[0], true);
+                    view.setUint16(offset + 3, codes[1], true);
+                    view.setUint16(offset + 5, codes[2], true);
+                    view.setUint16(offset + 7, codes[3], true);
+
+                    offset += 9;
+                }
+            }
+            return buffer;
+        }
+
+        function importBinary(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const buffer = new Uint8Array(e.target.result);
+                if (buffer.length !== 364) {
+                    alert(`エラー: ファイルサイズが 364 バイトではありません (${buffer.length} バイト)`);
+                    return;
+                }
+                parseAndApplyPayload(buffer);
+                alert("364バイトのバイナリデータを正常に読み込みました。");
+                triggerRealtimeSync();
+            };
+            reader.readAsArrayBuffer(file);
+            event.target.value = "";
+        }
+
+        function exportBinary() {
+            const data = build364BytePayload();
+            const blob = new Blob([data], { type: "application/octet-stream" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "macro_config.bin";
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }
+
+        function clearAll() {
+            if (confirm("すべてのスイッチの設定を『未設定』に戻しますか？")) {
+                initUI();
+                triggerRealtimeSync();
+            }
+        }
+
+        window.onload = function() {
+            if (/^https:\/\//.test(GITHUB_URL)) document.getElementById("github_link").href = GITHUB_URL;
+            initTheme();
+            initUI();
+            initGlobalClickHandler();
+            logConsole("準備完了。「COMポート選択」を押してデバイスを接続してください。", "sys");
+        };
+    </script>
+</body>
+</html>
